@@ -31,26 +31,35 @@ function runFetchSecretScriptAndScheduleNextRotation($fetchSecretScriptPath, $ch
 }
 
 // Remove the initial temporary cron job
-removeTemporaryCronJob($checkAndRunScriptPath);
-if (file_exists($cacheFilePath)) {
-    $cacheData = json_decode(file_get_contents($cacheFilePath), true);
+try {
+    removeTemporaryCronJob($checkAndRunScriptPath);
+} catch (Exception $e) {
+    logError('Error removing temporary cron job: ' . $e->getMessage());
+}
 
-    if (isset($cacheData['nextRotationDate'])) {
-        $nextRotationDate = new DateTime($cacheData['nextRotationDate']);
-        $now = new DateTime();
+try {
+    if (file_exists($cacheFilePath)) {
+        $cacheData = json_decode(file_get_contents($cacheFilePath), true);
 
-        if ($now >= $nextRotationDate) {
-            // Run the fetch secret script
-            runFetchSecretScriptAndScheduleNextRotation($fetchSecretScriptPath, $checkAndRunScriptPath, $cacheFilePath, $recipientEmail);
+        if (isset($cacheData['nextRotationDate'])) {
+            $nextRotationDate = new DateTime($cacheData['nextRotationDate']);
+            $now = new DateTime();
+
+            if ($now >= $nextRotationDate) {
+                // Run the fetch secret script
+                runFetchSecretScriptAndScheduleNextRotation($fetchSecretScriptPath, $checkAndRunScriptPath, $cacheFilePath, $recipientEmail);
+            } else {
+                // Schedule cron job for next rotation date
+                scheduleCronJob($nextRotationDate, $checkAndRunScriptPath);
+                echo "Scheduled cron job for next rotation date.\n";
+            }
         } else {
-            // Schedule cron job for next rotation date
-            scheduleCronJob($nextRotationDate, $checkAndRunScriptPath);
-            echo "Scheduled cron job for next rotation date.\n";
+            echo "Next rotation date not set in cache.\n";
         }
     } else {
-        echo "Next rotation date not set in cache.\n";
+        echo "Cache file not found. Running the fetch secret script.\n";
+        runFetchSecretScriptAndScheduleNextRotation($fetchSecretScriptPath, $checkAndRunScriptPath, $cacheFilePath, $recipientEmail);
     }
-} else {
-    echo "Cache file not found. Running the fetch secret script.\n";
-    runFetchSecretScriptAndScheduleNextRotation($fetchSecretScriptPath, $checkAndRunScriptPath, $cacheFilePath, $recipientEmail);
+} catch (Exception $e) {
+    logError('Error processing cache file or scheduling job: ' . $e->getMessage());
 }

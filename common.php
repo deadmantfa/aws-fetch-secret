@@ -1,8 +1,6 @@
 <?php
 require 'vendor/autoload.php';
 
-use Aws\Ses\SesClient;
-use Aws\SecretsManager\SecretsManagerClient;
 use Aws\Exception\AwsException;
 use Dotenv\Dotenv;
 
@@ -37,7 +35,7 @@ function sendEmailNotification($recipientEmail, $subject, $body): void
     $sesClient = createAwsClient('Ses', $_ENV['AWS_REGION']);
 
     try {
-        $emailResult = $sesClient->sendEmail([
+        $sesClient->sendEmail([
             'Source' => $recipientEmail,
             'Destination' => [
                 'ToAddresses' => [$recipientEmail],
@@ -64,7 +62,7 @@ function sendEmailNotification($recipientEmail, $subject, $body): void
 
 function scheduleCronJob($dateTime, $scriptPath): void
 {
-    $dateTime->add(new DateInterval('PT1M')); // Add 1 minute delay
+    $dateTime->add(new DateInterval('PT1M')); // Add 1-minute delay
     $cronTime = $dateTime->format('i H d m *');
     $cronCommand = "php $scriptPath";
     $cronJob = "$cronTime $cronCommand\n";
