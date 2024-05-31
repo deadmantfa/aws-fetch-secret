@@ -52,15 +52,16 @@ class FetchSecretTest extends TestCase
 
     public function testFetchSecret()
     {
-        $cacheDir = $_ENV['CACHE_DIR'] ?: sys_get_temp_dir() . '/secrets';
+        // Use putenv to set environment variables for the test
+        putenv('AWS_SECRET_IDS=test-secret-id');
+        putenv('RECIPIENT_EMAIL=test@example.com');
+        putenv('CACHE_DIR=' . sys_get_temp_dir() . '/secrets');
+        putenv('AWS_PROFILE=default'); // Override AWS profile
+
+        $cacheDir = getenv('CACHE_DIR');
         if (!file_exists($cacheDir)) {
             mkdir($cacheDir, 0750, true);
         }
-
-        // Mock environment variables
-        $_ENV['AWS_SECRET_IDS'] = 'test-secret-id';
-        $_ENV['RECIPIENT_EMAIL'] = 'test@example.com';
-        $_ENV['CACHE_DIR'] = $cacheDir;
 
         ob_start();
         fetchSecret($this->secretsManagerClient);
