@@ -34,7 +34,6 @@ function createAwsClient($service, $region)
     }
 }
 
-
 function sendEmailNotification($recipientEmail, $subject, $body, $sesClient = null, $sendEmailCallable = null): void
 {
     if (!filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
