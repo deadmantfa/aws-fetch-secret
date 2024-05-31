@@ -1,5 +1,7 @@
 <?php
 
+namespace AwsSecretFetcher;
+
 require_once __DIR__ . '/common.php';
 
 loadConfiguration();
@@ -42,7 +44,7 @@ function fetchSecret($secretsManagerClient = null): void
 
                 echo "Secret {$secretId} refreshed, stored in file cache, and email sent.\n";
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             logError('Error retrieving secret or sending email: ' . $e->getMessage());
         }
     }
