@@ -64,12 +64,8 @@ class FetchSecretTest extends TestCase
             echo "Mock crontab removed for script {$scriptPath}\n";
         };
 
-        // Assign the mocks globally
-        $GLOBALS['scheduleCronJob'] = $mockScheduleCronJob;
-        $GLOBALS['removeTemporaryCronJob'] = $mockRemoveTemporaryCronJob;
-
         ob_start();
-        \AwsSecretFetcher\fetchSecret($this->secretsManagerClient, $mockEmailSender);
+        \AwsSecretFetcher\fetchSecret($this->secretsManagerClient, $mockEmailSender, $mockScheduleCronJob, $mockRemoveTemporaryCronJob);
         $output = ob_get_clean();
 
         $this->assertStringContainsString('Secret test-secret-id refreshed, stored in file cache, and email sent.', $output);

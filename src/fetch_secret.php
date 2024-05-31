@@ -6,11 +6,13 @@ require_once __DIR__ . '/common.php';
 
 loadConfiguration();
 
-function fetchSecret($secretsManagerClient = null, $emailSender = null): void
+function fetchSecret($secretsManagerClient = null, $emailSender = null, $scheduleCronJob = null, $removeTemporaryCronJob = null): void
 {
     $awsRegion = $_ENV['AWS_REGION'];
     $secretsManagerClient = $secretsManagerClient ?? createAwsClient('SecretsManager', $awsRegion);
     $emailSender = $emailSender ?? 'AwsSecretFetcher\sendEmailNotification';
+    $scheduleCronJob = $scheduleCronJob ?? 'AwsSecretFetcher\scheduleCronJob';
+    $removeTemporaryCronJob = $removeTemporaryCronJob ?? 'AwsSecretFetcher\removeTemporaryCronJob';
 
     $secretIds = explode(',', $_ENV['AWS_SECRET_IDS']);
     $recipientEmail = $_ENV['RECIPIENT_EMAIL'];
