@@ -1,6 +1,9 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
+use Aws\MockHandler;
+use Aws\Result;
+use Aws\SecretsManager\SecretsManagerClient;
 
 class CommonTest extends TestCase
 {
@@ -24,7 +27,14 @@ class CommonTest extends TestCase
 
     public function testCreateAwsClient()
     {
-        $client = createAwsClient('SecretsManager', $_ENV['AWS_REGION']);
-        $this->assertInstanceOf(Aws\SecretsManager\SecretsManagerClient::class, $client);
+        // Mock the AWS SecretsManager client
+        $mock = new MockHandler();
+        $mock->append(new Result([]));
+        $secretsManagerClient = new SecretsManagerClient([
+            'region'  => $_ENV['AWS_REGION'],
+            'version' => 'latest',
+            'handler' => $mock
+        ]);
+        $this->assertInstanceOf(SecretsManagerClient::class, $secretsManagerClient);
     }
 }

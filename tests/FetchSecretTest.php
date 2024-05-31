@@ -1,12 +1,26 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
+use Aws\MockHandler;
+use Aws\Result;
+use Aws\SecretsManager\SecretsManagerClient;
 
 class FetchSecretTest extends TestCase
 {
     protected function setUp(): void
     {
         loadConfiguration();
+        // Mock the AWS SecretsManager client
+        $mock = new MockHandler();
+        $mock->append(new Result([
+            'SecretString' => json_encode(['username' => 'testuser', 'password' => 'testpass']),
+        ]));
+        $secretsManagerClient = new SecretsManagerClient([
+            'region'  => $_ENV['AWS_REGION'],
+            'version' => 'latest',
+            'handler' => $mock
+        ]);
+        $GLOBALS['secretsManagerClient'] = $secretsManagerClient;
     }
 
     public function testFetchSecret()
