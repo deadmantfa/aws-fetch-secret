@@ -9,24 +9,31 @@ use Aws\Ses\SesClient;
 
 class CommonTest extends TestCase
 {
+    private $errorLogFile;
+
     protected function setUp(): void
     {
         loadConfiguration();
+        $this->errorLogFile = sys_get_temp_dir() . '/php-error.log';
+    }
+
+    protected function tearDown(): void
+    {
+        if (file_exists($this->errorLogFile)) {
+            unlink($this->errorLogFile);
+        }
     }
 
     public function testLogError()
     {
-        // Redirect error log to a temporary stream
-        $stream = fopen('php://temp', 'a+');
-        ini_set('error_log', 'php://temp');
+        // Redirect error log to a temporary file
+        ini_set('error_log', $this->errorLogFile);
 
         // Log an error
         logError('This is a test error.');
 
-        // Check the log content
-        rewind($stream);
-        $logContent = stream_get_contents($stream);
-        fclose($stream);
+        // Read the log content
+        $logContent = file_get_contents($this->errorLogFile);
 
         $this->assertStringContainsString('This is a test error.', $logContent);
     }
@@ -73,17 +80,14 @@ class CommonTest extends TestCase
 
     public function testSendEmailNotificationInvalid()
     {
-        // Redirect error log to a temporary stream
-        $stream = fopen('php://temp', 'a+');
-        ini_set('error_log', 'php://temp');
+        // Redirect error log to a temporary file
+        ini_set('error_log', $this->errorLogFile);
 
         // Test sending an email with an invalid recipient email
         sendEmailNotification('invalid-email', 'Test subject', 'Test body');
 
-        // Check the log content
-        rewind($stream);
-        $logContent = stream_get_contents($stream);
-        fclose($stream);
+        // Read the log content
+        $logContent = file_get_contents($this->errorLogFile);
 
         $this->assertStringContainsString('Invalid recipient email address: invalid-email', $logContent);
     }
@@ -101,17 +105,14 @@ class CommonTest extends TestCase
             'handler' => $mock
         ]);
 
-        // Redirect error log to a temporary stream
-        $stream = fopen('php://temp', 'a+');
-        ini_set('error_log', 'php://temp');
+        // Redirect error log to a temporary file
+        ini_set('error_log', $this->errorLogFile);
 
         // Test sending an email and catching the exception
         sendEmailNotification('test@example.com', 'Test subject', 'Test body', $sesClient);
 
-        // Check the log content
-        rewind($stream);
-        $logContent = stream_get_contents($stream);
-        fclose($stream);
+        // Read the log content
+        $logContent = file_get_contents($this->errorLogFile);
 
         $this->assertStringContainsString('Error sending email: Error sending email', $logContent);
     }
