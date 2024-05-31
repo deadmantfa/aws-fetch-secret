@@ -67,7 +67,8 @@ class CommonTest extends TestCase
         $sesClient = new SesClient([
             'region'  => $_ENV['AWS_REGION'],
             'version' => 'latest',
-            'handler' => $mock
+            'handler' => $mock,
+            'credentials' => false,  // Ensure no real credentials are used
         ]);
 
         // Redirect output to capture the function's print output
@@ -97,12 +98,13 @@ class CommonTest extends TestCase
         // Mock the SES client to throw an exception
         $mock = new MockHandler();
         $mock->append(function (CommandInterface $cmd) {
-            throw new AwsException('Error sending email', $cmd);
+            throw new AwsException('Error sending email', $cmd, ['code' => 'Error']);
         });
         $sesClient = new SesClient([
             'region'  => $_ENV['AWS_REGION'],
             'version' => 'latest',
-            'handler' => $mock
+            'handler' => $mock,
+            'credentials' => false,  // Ensure no real credentials are used
         ]);
 
         // Redirect error log to a temporary file
