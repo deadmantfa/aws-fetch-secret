@@ -5,7 +5,6 @@ use Aws\MockHandler;
 use Aws\Result;
 use Aws\SecretsManager\SecretsManagerClient;
 
-// Include the necessary file
 require_once __DIR__ . '/../src/fetch_secret.php';
 
 class FetchSecretTest extends TestCase
@@ -30,6 +29,10 @@ class FetchSecretTest extends TestCase
             'region'  => $_ENV['AWS_REGION'],
             'version' => 'latest',
             'handler' => $secretsManagerMock,
+            'credentials' => [
+                'key' => 'test-key',
+                'secret' => 'test-secret',
+            ],
         ]);
 
         // Mock email sending function
