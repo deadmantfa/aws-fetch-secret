@@ -1,6 +1,7 @@
 # AWS Fetch Secret Manager
 
 ![PHP PHPUnit](https://github.com/deadmantfa/aws-fetch-secret/actions/workflows/phpunit.yml/badge.svg)
+[![codecov](https://codecov.io/github/deadmantfa/aws-fetch-secret/graph/badge.svg?token=68H7878LTU)](https://codecov.io/github/deadmantfa/aws-fetch-secret)
 
 This project is a PHP script designed to fetch secrets from AWS Secrets Manager, cache them locally, and schedule cron jobs for secret rotation. It also includes functionality to send email notifications when secrets are refreshed.
 
@@ -83,3 +84,6 @@ Feel free to fork this repository and submit pull requests. For major changes, p
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Coverage
+![Sunburst](https://codecov.io/github/deadmantfa/aws-fetch-secret/graphs/sunburst.svg?token=68H7878LTU)
