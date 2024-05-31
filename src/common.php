@@ -29,14 +29,16 @@ function createAwsClient($service, $region)
     ]);
 }
 
-function sendEmailNotification($recipientEmail, $subject, $body): void
+function sendEmailNotification($recipientEmail, $subject, $body, $sesClient = null): void
 {
     if (!filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
         logError("Invalid recipient email address: $recipientEmail");
         return;
     }
 
-    $sesClient = createAwsClient('Ses', $_ENV['AWS_REGION']);
+    if ($sesClient === null) {
+        $sesClient = createAwsClient('Ses', $_ENV['AWS_REGION']);
+    }
 
     try {
         $sesClient->sendEmail([
