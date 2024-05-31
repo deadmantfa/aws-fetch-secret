@@ -17,6 +17,11 @@ class FetchSecretTest extends TestCase
         $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
         $dotenv->load();
 
+        // Set AWS credentials via environment variables
+        putenv('AWS_ACCESS_KEY_ID=test-key');
+        putenv('AWS_SECRET_ACCESS_KEY=test-secret');
+        putenv('AWS_REGION=' . $_ENV['AWS_REGION']);
+
         // Mock the AWS SecretsManager client
         $secretsManagerMock = new MockHandler();
         $secretsManagerMock->append(new Result([
@@ -29,10 +34,6 @@ class FetchSecretTest extends TestCase
             'region'  => $_ENV['AWS_REGION'],
             'version' => 'latest',
             'handler' => $secretsManagerMock,
-            'credentials' => [
-                'key' => 'test-key',
-                'secret' => 'test-secret',
-            ],
         ]);
 
         // Mock email sending function
@@ -56,7 +57,6 @@ class FetchSecretTest extends TestCase
         putenv('AWS_SECRET_IDS=test-secret-id');
         putenv('RECIPIENT_EMAIL=test@example.com');
         putenv('CACHE_DIR=' . sys_get_temp_dir() . '/secrets');
-        putenv('AWS_PROFILE=default'); // Override AWS profile
 
         $cacheDir = getenv('CACHE_DIR');
         if (!file_exists($cacheDir)) {
