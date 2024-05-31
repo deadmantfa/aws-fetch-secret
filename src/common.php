@@ -66,7 +66,7 @@ function sendEmailNotification($recipientEmail, $subject, $body, $sesClient = nu
     }
 }
 
-function scheduleCronJob($dateTime, $scriptPath): void
+function scheduleCronJob($dateTime, $scriptPath, $exec = 'exec'): void
 {
     $dateTime->add(new DateInterval('PT1M')); // Add 1-minute delay
     $cronTime = $dateTime->format('i H d m *');
@@ -75,12 +75,13 @@ function scheduleCronJob($dateTime, $scriptPath): void
 
     // Read existing cron jobs
     $output = [];
-    exec('crontab -l', $output, $status);
+    $exec('crontab -l', $output, $status);
 
     if ($status !== 0) {
         // No crontab for this user
         $output = [];
     }
+
     // Check if the cron job already exists
     foreach ($output as $line) {
         if (str_contains($line, $cronCommand)) {
@@ -92,7 +93,7 @@ function scheduleCronJob($dateTime, $scriptPath): void
     // Add new cron job
     $output[] = $cronJob;
     file_put_contents('/tmp/crontab.txt', implode("\n", $output));
-    exec('crontab /tmp/crontab.txt', $execOutput, $execStatus);
+    $exec('crontab /tmp/crontab.txt', $execOutput, $execStatus);
     unlink('/tmp/crontab.txt'); // Clean up temp file
 
     if ($execStatus === 0) {
