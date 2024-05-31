@@ -123,4 +123,33 @@ class CommonTest extends TestCase
 
         $this->assertStringContainsString('Error sending email: Error sending email', $logContent);
     }
+
+    public function testScheduleCronJob()
+    {
+        // Mock the cron job scheduling
+        $dateTime = new DateTime();
+        $scriptPath = '/path/to/script.php';
+
+        // Redirect output to capture the function's print output
+        ob_start();
+        scheduleCronJob($dateTime, $scriptPath);
+        $output = ob_get_clean();
+
+        // Assert the expected output
+        $this->assertStringContainsString('Cron job scheduled:', $output);
+    }
+
+    public function testRemoveTemporaryCronJob()
+    {
+        // Mock the cron job removal
+        $scriptPath = '/path/to/script.php';
+
+        // Redirect output to capture the function's print output
+        ob_start();
+        removeTemporaryCronJob($scriptPath);
+        $output = ob_get_clean();
+
+        // Assert the expected output
+        $this->assertStringContainsString('Temporary cron job removed.', $output);
+    }
 }
