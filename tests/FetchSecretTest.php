@@ -5,6 +5,7 @@ use Aws\MockHandler;
 use Aws\Result;
 use Aws\SecretsManager\SecretsManagerClient;
 
+// Include the necessary file
 require_once __DIR__ . '/../src/fetch_secret.php';
 
 class FetchSecretTest extends TestCase
@@ -30,19 +31,39 @@ class FetchSecretTest extends TestCase
             'version' => 'latest',
             'handler' => $secretsManagerMock,
         ]);
+
+        // Mock email sending function
+        global $sendEmailNotification;
+        $sendEmailNotification = function($recipientEmail, $subject, $body) {
+            // Simulate sending an email
+            echo "Email sent to {$recipientEmail} with subject: {$subject}\n";
+        };
     }
 
     public function testFetchSecret()
     {
-        $cacheDir = $_ENV['CACHE_DIR'] ?: '/tmp/secrets';
+        $cacheDir = $_ENV['CACHE_DIR'] ?: sys_get_temp_dir() . '/secrets';
         if (!file_exists($cacheDir)) {
             mkdir($cacheDir, 0750, true);
         }
+
+        // Mock environment variables
+        $_ENV['AWS_SECRET_IDS'] = 'test-secret-id';
+        $_ENV['RECIPIENT_EMAIL'] = 'test@example.com';
+        $_ENV['CACHE_DIR'] = $cacheDir;
 
         ob_start();
         fetchSecret($this->secretsManagerClient);
         $output = ob_get_clean();
 
         $this->assertStringContainsString('Secret test-secret-id refreshed, stored in file cache, and email sent.', $output);
+
+        // Verify cache file creation
+        $cacheFilePath = $cacheDir . '/test-secret-id.json';
+        $this->assertFileExists($cacheFilePath);
+
+        // Clean up
+        unlink($cacheFilePath);
+        rmdir($cacheDir);
     }
 }
