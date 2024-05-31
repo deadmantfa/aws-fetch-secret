@@ -10,17 +10,26 @@ class FetchSecretTest extends TestCase
     protected function setUp(): void
     {
         loadConfiguration();
+
         // Mock the AWS SecretsManager client
-        $mock = new MockHandler();
-        $mock->append(new Result([
+        $secretsManagerMock = new MockHandler();
+        $secretsManagerMock->append(new Result([
             'SecretString' => json_encode(['username' => 'testuser', 'password' => 'testpass']),
         ]));
-        $secretsManagerClient = new SecretsManagerClient([
+        $GLOBALS['secretsManagerClient'] = new SecretsManagerClient([
             'region'  => $_ENV['AWS_REGION'],
             'version' => 'latest',
-            'handler' => $mock
+            'handler' => $secretsManagerMock,
         ]);
-        $GLOBALS['secretsManagerClient'] = $secretsManagerClient;
+
+        // Mock the AWS SES client
+        $sesMock = new MockHandler();
+        $sesMock->append(new Result([]));
+        $GLOBALS['sesClient'] = new Aws\Ses\SesClient([
+            'region'  => $_ENV['AWS_REGION'],
+            'version' => 'latest',
+            'handler' => $sesMock,
+        ]);
     }
 
     public function testFetchSecret()
