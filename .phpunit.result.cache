@@ -1,0 +1,1 @@
+{"version":1,"defects":[],"times":{"CheckAndRunTest::testCheckAndRun":0.145,"CommonTest::testLogError":0.009,"CommonTest::testLoadConfiguration":0.008,"CommonTest::testCreateAwsClient":0.895,"FetchSecretTest::testFetchSecret":0.144}}
