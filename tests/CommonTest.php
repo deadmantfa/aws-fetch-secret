@@ -53,7 +53,8 @@ class CommonTest extends TestCase
         $secretsManagerClient = new SesClient([
             'region'  => $_ENV['AWS_REGION'],
             'version' => 'latest',
-            'handler' => $mock
+            'handler' => $mock,
+            'credentials' => false,  // Ensure no real credentials are used
         ]);
 
         $this->assertInstanceOf(SesClient::class, $secretsManagerClient);
@@ -72,9 +73,13 @@ class CommonTest extends TestCase
         ]);
 
         // Redirect output to capture the function's print output
+        $obLevel = ob_get_level();
         ob_start();
         sendEmailNotification('test@example.com', 'Test subject', 'Test body', $sesClient);
         $output = ob_get_clean();
+        while (ob_get_level() > $obLevel) {
+            ob_end_clean();
+        }
 
         $this->assertStringContainsString("Email sent: Test subject\n", $output);
     }
