@@ -41,6 +41,13 @@ class FetchSecretTest extends TestCase
             // Simulate sending an email
             echo "Email sent to {$recipientEmail} with subject: {$subject}\n";
         };
+
+        // Mock logging function
+        global $logError;
+        $logError = function($message) {
+            // Simulate logging an error
+            echo "Logged error: {$message}\n";
+        };
     }
 
     public function testFetchSecret()
