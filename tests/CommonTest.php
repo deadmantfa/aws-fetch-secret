@@ -13,7 +13,6 @@ class CommonTest extends TestCase
     {
         $this->expectOutputString('');
         logError('This is a test error.');
-        // Check the error log for the test message (this part is system-dependent and might need customization)
     }
 
     public function testLoadConfiguration()

@@ -6,11 +6,10 @@ class CheckAndRunTest extends TestCase
 {
     protected function setUp(): void
     {
-        // Load configuration for the tests
         loadConfiguration();
 
         // Ensure the cache directory exists
-        $cacheDir = $_ENV['CACHE_DIR'] ?: __DIR__ . '/../secrets';
+        $cacheDir = $_ENV['CACHE_DIR'] ?: '/tmp/secrets';
         if (!file_exists($cacheDir)) {
             mkdir($cacheDir, 0750, true);
         }
@@ -28,7 +27,7 @@ class CheckAndRunTest extends TestCase
     protected function tearDown(): void
     {
         // Clean up the mock cache directory after tests
-        $cacheDir = $_ENV['CACHE_DIR'] ?: __DIR__ . '/../secrets';
+        $cacheDir = $_ENV['CACHE_DIR'] ?: '/tmp/secrets';
         if (file_exists($cacheDir)) {
             array_map('unlink', glob("$cacheDir/*"));
             rmdir($cacheDir);

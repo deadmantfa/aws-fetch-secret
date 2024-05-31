@@ -11,13 +11,11 @@ class FetchSecretTest extends TestCase
 
     public function testFetchSecret()
     {
-        // Simulate the environment setup
-        $_ENV['AWS_REGION'] = 'us-east-1';
-        $_ENV['AWS_SECRET_IDS'] = 'test-secret-id';
-        $_ENV['RECIPIENT_EMAIL'] = 'test@example.com';
-        $_ENV['CACHE_DIR'] = '/tmp/secrets';
-
-        // Mock AWS client and other dependencies if necessary
+        // Ensure cache directory exists
+        $cacheDir = $_ENV['CACHE_DIR'] ?: '/tmp/secrets';
+        if (!file_exists($cacheDir)) {
+            mkdir($cacheDir, 0750, true);
+        }
 
         // Execute the script
         ob_start();
