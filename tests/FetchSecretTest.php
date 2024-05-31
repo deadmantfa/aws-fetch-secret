@@ -4,12 +4,12 @@ use PHPUnit\Framework\TestCase;
 use Aws\MockHandler;
 use Aws\Result;
 use Aws\SecretsManager\SecretsManagerClient;
-use Aws\Ses\SesClient;
+
+require_once __DIR__ . '/../src/fetch_secret.php';
 
 class FetchSecretTest extends TestCase
 {
     protected $secretsManagerClient;
-    protected $sesClient;
 
     protected function setUp(): void
     {
@@ -25,15 +25,6 @@ class FetchSecretTest extends TestCase
             'version' => 'latest',
             'handler' => $secretsManagerMock,
         ]);
-
-        // Mock the AWS SES client
-        $sesMock = new MockHandler();
-        $sesMock->append(new Result([]));
-        $this->sesClient = new SesClient([
-            'region'  => $_ENV['AWS_REGION'],
-            'version' => 'latest',
-            'handler' => $sesMock,
-        ]);
     }
 
     public function testFetchSecret()
@@ -46,7 +37,7 @@ class FetchSecretTest extends TestCase
 
         // Execute the function
         ob_start();
-        fetchSecret($this->secretsManagerClient, $this->sesClient);
+        fetchSecret($this->secretsManagerClient);
         $output = ob_get_clean();
 
         // Assert expected output
