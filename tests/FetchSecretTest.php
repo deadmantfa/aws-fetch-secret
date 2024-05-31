@@ -5,7 +5,6 @@ use Aws\MockHandler;
 use Aws\Result;
 use Aws\SecretsManager\SecretsManagerClient;
 
-// Load the original script
 require_once __DIR__ . '/../src/fetch_secret.php';
 require_once __DIR__ . '/../src/common.php';
 
@@ -54,6 +53,16 @@ class FetchSecretTest extends TestCase
         // Mock email sending function
         $mockEmailSender = function($recipientEmail, $subject, $body) {
             echo "Mock email sent to {$recipientEmail} with subject: {$subject}\n";
+        };
+
+        // Mock crontab functions
+        global $scheduleCronJob, $removeTemporaryCronJob;
+        $scheduleCronJob = function ($dateTime, $scriptPath) {
+            echo "Mock crontab scheduled for {$dateTime->format('Y-m-d H:i:s')} with script {$scriptPath}\n";
+        };
+
+        $removeTemporaryCronJob = function ($scriptPath) {
+            echo "Mock crontab removed for script {$scriptPath}\n";
         };
 
         ob_start();
