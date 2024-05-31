@@ -1,0 +1,28 @@
+<?php
+
+use PHPUnit\Framework\TestCase;
+
+class CommonTest extends TestCase
+{
+    public function testLogError()
+    {
+        $this->expectOutputString('');
+        logError('This is a test error.');
+        // Check the error log for the test message (this part is system-dependent and might need customization)
+    }
+
+    public function testLoadConfiguration()
+    {
+        loadConfiguration();
+        $this->assertArrayHasKey('AWS_REGION', $_ENV);
+        $this->assertArrayHasKey('AWS_SECRET_IDS', $_ENV);
+        $this->assertArrayHasKey('RECIPIENT_EMAIL', $_ENV);
+    }
+
+    public function testCreateAwsClient()
+    {
+        loadConfiguration();
+        $client = createAwsClient('SecretsManager', $_ENV['AWS_REGION']);
+        $this->assertInstanceOf(Aws\SecretsManager\SecretsManagerClient::class, $client);
+    }
+}

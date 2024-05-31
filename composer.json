@@ -2,5 +2,8 @@
   "require": {
     "aws/aws-sdk-php": "^3.308",
     "vlucas/phpdotenv": "^v5.6.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "*"
   }
 }
