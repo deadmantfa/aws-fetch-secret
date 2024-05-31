@@ -5,7 +5,9 @@ use Aws\MockHandler;
 use Aws\Result;
 use Aws\SecretsManager\SecretsManagerClient;
 
+// Load the original script
 require_once __DIR__ . '/../src/fetch_secret.php';
+require_once __DIR__ . '/../src/common.php';
 
 class FetchSecretTest extends TestCase
 {
@@ -36,19 +38,17 @@ class FetchSecretTest extends TestCase
             'handler' => $secretsManagerMock,
         ]);
 
-        // Mock email sending function
-        global $sendEmailNotification;
-        $sendEmailNotification = function($recipientEmail, $subject, $body) {
+        // Mock email sending function in the AwsSecretFetcher namespace
+        $this->mockFunction('AwsSecretFetcher\sendEmailNotification', function ($recipientEmail, $subject, $body) {
             // Simulate sending an email
             echo "Mock email sent to {$recipientEmail} with subject: {$subject}\n";
-        };
+        });
 
         // Mock logging function
-        global $logError;
-        $logError = function($message) {
+        $this->mockFunction('AwsSecretFetcher\logError', function ($message) {
             // Simulate logging an error
             echo "Logged error: {$message}\n";
-        };
+        });
     }
 
     public function testFetchSecret()
@@ -76,5 +76,10 @@ class FetchSecretTest extends TestCase
         // Clean up
         unlink($cacheFilePath);
         rmdir($cacheDir);
+    }
+
+    private function mockFunction(string $functionName, callable $mock): void
+    {
+        runkit_function_redefine($functionName, '', $mock);
     }
 }
