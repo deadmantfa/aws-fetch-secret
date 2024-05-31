@@ -1,7 +1,7 @@
 <?php
 
 require __DIR__ . '/../vendor/autoload.php';
-require __DIR__ . '/../src/common.php';
+require_once __DIR__ . '/../src/common.php';
 
 use Dotenv\Dotenv;
 
