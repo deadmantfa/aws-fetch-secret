@@ -4,13 +4,18 @@ use PHPUnit\Framework\TestCase;
 
 class FetchSecretTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        loadConfiguration();
+    }
+
     public function testFetchSecret()
     {
         // Simulate the environment setup
         $_ENV['AWS_REGION'] = 'us-east-1';
         $_ENV['AWS_SECRET_IDS'] = 'test-secret-id';
         $_ENV['RECIPIENT_EMAIL'] = 'test@example.com';
-        $_ENV['CACHE_DIR'] = __DIR__ . '/../secrets';
+        $_ENV['CACHE_DIR'] = '/tmp/secrets';
 
         // Mock AWS client and other dependencies if necessary
 

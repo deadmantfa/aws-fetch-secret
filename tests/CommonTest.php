@@ -4,6 +4,11 @@ use PHPUnit\Framework\TestCase;
 
 class CommonTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        loadConfiguration();
+    }
+
     public function testLogError()
     {
         $this->expectOutputString('');
@@ -13,7 +18,6 @@ class CommonTest extends TestCase
 
     public function testLoadConfiguration()
     {
-        loadConfiguration();
         $this->assertArrayHasKey('AWS_REGION', $_ENV);
         $this->assertArrayHasKey('AWS_SECRET_IDS', $_ENV);
         $this->assertArrayHasKey('RECIPIENT_EMAIL', $_ENV);
@@ -21,7 +25,6 @@ class CommonTest extends TestCase
 
     public function testCreateAwsClient()
     {
-        loadConfiguration();
         $client = createAwsClient('SecretsManager', $_ENV['AWS_REGION']);
         $this->assertInstanceOf(Aws\SecretsManager\SecretsManagerClient::class, $client);
     }

@@ -19,5 +19,8 @@ jobs:
       - name: Install dependencies
         run: composer install
 
+      - name: Set up environment file
+        run: cp tests/.env .env
+
       - name: Run tests
         run: vendor/bin/phpunit --configuration phpunit.xml --testdox
