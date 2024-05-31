@@ -1,6 +1,7 @@
 <?php
 
 require 'vendor/autoload.php';
+
 use Aws\Exception\AwsException;
 use Dotenv\Dotenv;
 
@@ -13,6 +14,9 @@ function logError($message): void
 function loadConfiguration(): void
 {
     $dotenv = Dotenv::createImmutable(__DIR__ . '/../config');
+    if (file_exists(__DIR__ . '/../tests/.env')) {
+        $dotenv = Dotenv::createImmutable(__DIR__ . '/../tests');
+    }
     $dotenv->load();
 }
 
