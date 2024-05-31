@@ -4,9 +4,13 @@ use PHPUnit\Framework\TestCase;
 use Aws\MockHandler;
 use Aws\Result;
 use Aws\SecretsManager\SecretsManagerClient;
+use Aws\Ses\SesClient;
 
 class FetchSecretTest extends TestCase
 {
+    protected $secretsManagerClient;
+    protected $sesClient;
+
     protected function setUp(): void
     {
         loadConfiguration();
@@ -16,7 +20,7 @@ class FetchSecretTest extends TestCase
         $secretsManagerMock->append(new Result([
             'SecretString' => json_encode(['username' => 'testuser', 'password' => 'testpass']),
         ]));
-        $GLOBALS['secretsManagerClient'] = new SecretsManagerClient([
+        $this->secretsManagerClient = new SecretsManagerClient([
             'region'  => $_ENV['AWS_REGION'],
             'version' => 'latest',
             'handler' => $secretsManagerMock,
@@ -25,7 +29,7 @@ class FetchSecretTest extends TestCase
         // Mock the AWS SES client
         $sesMock = new MockHandler();
         $sesMock->append(new Result([]));
-        $GLOBALS['sesClient'] = new Aws\Ses\SesClient([
+        $this->sesClient = new SesClient([
             'region'  => $_ENV['AWS_REGION'],
             'version' => 'latest',
             'handler' => $sesMock,
@@ -40,9 +44,9 @@ class FetchSecretTest extends TestCase
             mkdir($cacheDir, 0750, true);
         }
 
-        // Execute the script
+        // Execute the function
         ob_start();
-        require __DIR__ . '/../src/fetch_secret.php';
+        fetchSecret($this->secretsManagerClient, $this->sesClient);
         $output = ob_get_clean();
 
         // Assert expected output
