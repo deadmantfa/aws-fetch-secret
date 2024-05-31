@@ -13,13 +13,14 @@ class FetchSecretTest extends TestCase
 
     protected function setUp(): void
     {
-        loadConfiguration();
+        // Load configuration from test .env file
+        $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+        $dotenv->load();
 
+        // Mock the AWS SecretsManager client
         $secretsManagerMock = new MockHandler();
         $secretsManagerMock->append(new Result([
             'SecretString' => json_encode(['username' => 'testuser', 'password' => 'testpass']),
-            'ARN' => 'arn:aws:secretsmanager:us-east-1:123456789012:secret:test-secret-id',
-            'Name' => 'test-secret-id',
         ]));
         $secretsManagerMock->append(new Result([
             'NextRotationDate' => (new DateTime('+1 day'))->format(DateTime::ATOM),
