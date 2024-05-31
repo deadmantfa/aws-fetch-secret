@@ -126,9 +126,12 @@ class CommonTest extends TestCase
 
     public function testScheduleCronJob()
     {
-        // Mock the cron job scheduling
+        // Simulate the scenario where the cron job is not already scheduled
         $dateTime = new DateTime();
         $scriptPath = '/path/to/script.php';
+
+        // Clear any existing cron jobs
+        exec('crontab -r');
 
         // Redirect output to capture the function's print output
         ob_start();
@@ -137,6 +140,54 @@ class CommonTest extends TestCase
 
         // Assert the expected output
         $this->assertStringContainsString('Cron job scheduled:', $output);
+    }
+
+    public function testScheduleCronJobAlreadyScheduled()
+    {
+        // Simulate the scenario where the cron job is already scheduled
+        $dateTime = new DateTime();
+        $scriptPath = '/path/to/script.php';
+
+        // Mock the existing cron job
+        exec('echo "0 * * * * php /path/to/script.php" | crontab -');
+
+        // Redirect output to capture the function's print output
+        ob_start();
+        scheduleCronJob($dateTime, $scriptPath);
+        $output = ob_get_clean();
+
+        // Assert the expected output
+        $this->assertStringContainsString('Cron job already scheduled:', $output);
+    }
+
+    public function testScheduleCronJobFailure()
+    {
+        // Simulate the scenario where scheduling a cron job fails
+        $dateTime = new DateTime();
+        $scriptPath = '/path/to/script.php';
+
+        // Redirect error log to a temporary file
+        ini_set('error_log', $this->errorLogFile);
+
+        // Mock exec failure by simulating failure
+        $execMock = function($cmd, &$output, &$retval) {
+            $retval = 1;
+        };
+
+        // Temporarily replace the exec function
+        $execOriginal = 'exec';
+        runkit_function_redefine('exec', '$cmd, &$output, &$retval', $execMock);
+
+        // Test scheduling a cron job and catching the failure
+        scheduleCronJob($dateTime, $scriptPath);
+
+        // Restore the original exec function
+        runkit_function_redefine('exec', '$cmd, &$output, &$retval', $execOriginal);
+
+        // Read the log content
+        $logContent = file_get_contents($this->errorLogFile);
+
+        $this->assertStringContainsString('Failed to schedule cron job:', $logContent);
     }
 
     public function testRemoveTemporaryCronJob()
