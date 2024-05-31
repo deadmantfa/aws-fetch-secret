@@ -23,4 +23,9 @@ jobs:
         run: cp tests/.env .env
 
       - name: Run tests
-        run: vendor/bin/phpunit --configuration phpunit.xml --testdox
+        run: vendor/bin/phpunit --configuration phpunit.xml --coverage-clover=coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
