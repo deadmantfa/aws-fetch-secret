@@ -166,28 +166,28 @@ class CommonTest extends TestCase
         $dateTime = new DateTime();
         $scriptPath = '/path/to/script.php';
 
+        // Mock the exec function to simulate failure
+        $this->mockExecFailure();
+
         // Redirect error log to a temporary file
         ini_set('error_log', $this->errorLogFile);
 
-        // Mock exec failure by simulating failure
-        $execMock = function($cmd, &$output, &$retval) {
-            $retval = 1;
-        };
-
-        // Temporarily replace the exec function
-        $execOriginal = 'exec';
-        runkit_function_redefine('exec', '$cmd, &$output, &$retval', $execMock);
-
         // Test scheduling a cron job and catching the failure
         scheduleCronJob($dateTime, $scriptPath);
-
-        // Restore the original exec function
-        runkit_function_redefine('exec', '$cmd, &$output, &$retval', $execOriginal);
 
         // Read the log content
         $logContent = file_get_contents($this->errorLogFile);
 
         $this->assertStringContainsString('Failed to schedule cron job:', $logContent);
+    }
+
+    private function mockExecFailure()
+    {
+        // Mock exec to simulate failure
+        global $execMock;
+        $execMock = function($cmd, &$output, &$retval) {
+            $retval = 1;
+        };
     }
 
     public function testRemoveTemporaryCronJob()
