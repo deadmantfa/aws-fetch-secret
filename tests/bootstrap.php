@@ -2,6 +2,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../src/common.php';
+require_once __DIR__ . '/../src/fetch_secret.php';
 
 use Dotenv\Dotenv;
 
