@@ -6,10 +6,11 @@ require_once __DIR__ . '/common.php';
 
 loadConfiguration();
 
-function fetchSecret($secretsManagerClient = null): void
+function fetchSecret($secretsManagerClient = null, $emailSender = null): void
 {
     $awsRegion = $_ENV['AWS_REGION'];
     $secretsManagerClient = $secretsManagerClient ?? createAwsClient('SecretsManager', $awsRegion);
+    $emailSender = $emailSender ?? 'AwsSecretFetcher\sendEmailNotification';
 
     $secretIds = explode(',', $_ENV['AWS_SECRET_IDS']);
     $recipientEmail = $_ENV['RECIPIENT_EMAIL'];
@@ -40,7 +41,7 @@ function fetchSecret($secretsManagerClient = null): void
                 $subject = 'AWS Secret Manager: Secret Refreshed';
                 $body = "The secret for {$secretId} has been refreshed and stored in the cache.\n\nNext rotation date: $nextRotationDate";
 
-                sendEmailNotification($recipientEmail, $subject, $body);
+                $emailSender($recipientEmail, $subject, $body);
 
                 echo "Secret {$secretId} refreshed, stored in file cache, and email sent.\n";
             }

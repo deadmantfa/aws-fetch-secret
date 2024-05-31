@@ -37,18 +37,6 @@ class FetchSecretTest extends TestCase
             'version' => 'latest',
             'handler' => $secretsManagerMock,
         ]);
-
-        // Mock email sending function in the AwsSecretFetcher namespace
-        $this->mockFunction('AwsSecretFetcher\sendEmailNotification', function ($recipientEmail, $subject, $body) {
-            // Simulate sending an email
-            echo "Mock email sent to {$recipientEmail} with subject: {$subject}\n";
-        });
-
-        // Mock logging function
-        $this->mockFunction('AwsSecretFetcher\logError', function ($message) {
-            // Simulate logging an error
-            echo "Logged error: {$message}\n";
-        });
     }
 
     public function testFetchSecret()
@@ -63,8 +51,13 @@ class FetchSecretTest extends TestCase
             mkdir($cacheDir, 0750, true);
         }
 
+        // Mock email sending function
+        $mockEmailSender = function($recipientEmail, $subject, $body) {
+            echo "Mock email sent to {$recipientEmail} with subject: {$subject}\n";
+        };
+
         ob_start();
-        \AwsSecretFetcher\fetchSecret($this->secretsManagerClient);
+        \AwsSecretFetcher\fetchSecret($this->secretsManagerClient, $mockEmailSender);
         $output = ob_get_clean();
 
         $this->assertStringContainsString('Secret test-secret-id refreshed, stored in file cache, and email sent.', $output);
@@ -76,10 +69,5 @@ class FetchSecretTest extends TestCase
         // Clean up
         unlink($cacheFilePath);
         rmdir($cacheDir);
-    }
-
-    private function mockFunction(string $functionName, callable $mock): void
-    {
-        runkit_function_redefine($functionName, '', $mock);
     }
 }
