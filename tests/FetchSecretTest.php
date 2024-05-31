@@ -56,14 +56,17 @@ class FetchSecretTest extends TestCase
         };
 
         // Mock crontab functions
-        global $scheduleCronJob, $removeTemporaryCronJob;
-        $scheduleCronJob = function ($dateTime, $scriptPath) {
+        $mockScheduleCronJob = function ($dateTime, $scriptPath) {
             echo "Mock crontab scheduled for {$dateTime->format('Y-m-d H:i:s')} with script {$scriptPath}\n";
         };
 
-        $removeTemporaryCronJob = function ($scriptPath) {
+        $mockRemoveTemporaryCronJob = function ($scriptPath) {
             echo "Mock crontab removed for script {$scriptPath}\n";
         };
+
+        // Assign the mocks globally
+        $GLOBALS['scheduleCronJob'] = $mockScheduleCronJob;
+        $GLOBALS['removeTemporaryCronJob'] = $mockRemoveTemporaryCronJob;
 
         ob_start();
         \AwsSecretFetcher\fetchSecret($this->secretsManagerClient, $mockEmailSender);
