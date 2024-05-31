@@ -23,4 +23,4 @@ jobs:
         run: cp tests/.env .env
 
       - name: Run tests
-        run: vendor/bin/phpunit --configuration phpunit.xml --testdox --debug
+        run: vendor/bin/phpunit --configuration phpunit.xml --testdox
