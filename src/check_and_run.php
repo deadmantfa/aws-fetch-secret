@@ -3,9 +3,9 @@ require 'common.php';
 
 loadConfiguration();
 
-$cacheFilePath = '/opt/aws-fetch-secret/db_credentials.json';
-$fetchSecretScriptPath = '/opt/aws-fetch-secret/fetch_secret.php';
-$checkAndRunScriptPath = '/opt/aws-fetch-secret/check_and_run.php';
+$cacheDir = $_ENV['CACHE_DIR'] ?: __DIR__ . '/../secrets';
+$fetchSecretScriptPath = __DIR__ . '/fetch_secret.php';
+$checkAndRunScriptPath = __DIR__ . '/check_and_run.php';
 $recipientEmail = $_ENV['RECIPIENT_EMAIL'];
 
 /**
@@ -38,6 +38,7 @@ try {
 }
 
 try {
+    $cacheFilePath = $cacheDir . '/db_credentials.json';
     if (file_exists($cacheFilePath)) {
         $cacheData = json_decode(file_get_contents($cacheFilePath), true);
 
