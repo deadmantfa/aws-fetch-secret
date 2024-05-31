@@ -4,10 +4,11 @@ require_once __DIR__ . '/common.php';
 
 loadConfiguration();
 
-function fetchSecret($secretsManagerClient = null)
+function fetchSecret($secretsManagerClient = null, $sesClient = null)
 {
     $awsRegion = $_ENV['AWS_REGION'];
     $secretsManagerClient = $secretsManagerClient ?? createAwsClient('SecretsManager', $awsRegion);
+    $sesClient = $sesClient ?? createAwsClient('Ses', $awsRegion);
 
     // Get the secret IDs from .env
     $secretIds = explode(',', $_ENV['AWS_SECRET_IDS']);
