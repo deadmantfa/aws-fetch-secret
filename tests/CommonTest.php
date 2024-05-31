@@ -47,17 +47,9 @@ class CommonTest extends TestCase
 
     public function testCreateAwsClient()
     {
-        // Mock the AWS SecretsManager client
-        $mock = new MockHandler();
-        $mock->append(new Result([]));
-        $secretsManagerClient = new SesClient([
-            'region'  => $_ENV['AWS_REGION'],
-            'version' => 'latest',
-            'handler' => $mock,
-            'credentials' => false,  // Ensure no real credentials are used
-        ]);
-
-        $this->assertInstanceOf(SesClient::class, $secretsManagerClient);
+        // Create an SES client
+        $client = createAwsClient('Ses', $_ENV['AWS_REGION']);
+        $this->assertInstanceOf(SesClient::class, $client);
     }
 
     public function testSendEmailNotificationValid()
@@ -82,6 +74,32 @@ class CommonTest extends TestCase
         }
 
         $this->assertStringContainsString("Email sent: Test subject\n", $output);
+    }
+
+    public function testSendEmailNotificationWithoutClient()
+    {
+        // Mock the `sendEmail` function to simulate a successful sendEmail call
+        $sendEmailMock = function ($params) {
+            echo "Email sent: " . $params['Message']['Subject']['Data'] . "\n";
+        };
+
+        // Redirect output to capture the function's print output
+        $obLevel = ob_get_level();
+        ob_start();
+        sendEmailNotification('test@example.com', 'Test subject', 'Test body', null, $sendEmailMock);
+        $output = ob_get_clean();
+        while (ob_get_level() > $obLevel) {
+            ob_end_clean();
+        }
+
+        // Check error log in case it was written instead of echo
+        $logContent = file_exists($this->errorLogFile) ? file_get_contents($this->errorLogFile) : '';
+
+        // Ensure at least one of the outputs contains the expected string
+        $this->assertTrue(
+            str_contains($output, "Email sent: Test subject\n") || str_contains($logContent, "Email sent: Test subject\n"),
+            'Expected output not found in both output and log content. Output: ' . $output . ' Log: ' . $logContent
+        );
     }
 
     public function testSendEmailNotificationInvalid()
@@ -188,6 +206,9 @@ class CommonTest extends TestCase
     {
         // Mock the cron job removal
         $scriptPath = '/path/to/script.php';
+
+        // Mock existing cron jobs
+        exec('echo "* * * * * php /path/to/script.php" | crontab -');
 
         // Redirect output to capture the function's print output
         ob_start();

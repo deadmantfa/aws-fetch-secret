@@ -22,14 +22,20 @@ function loadConfiguration(): void
 
 function createAwsClient($service, $region)
 {
-    $className = "Aws\\{$service}\\{$service}Client";
-    return new $className([
-        'version' => 'latest',
-        'region' => $region,
-    ]);
+    try {
+        $className = "Aws\\{$service}\\{$service}Client";
+        return new $className([
+            'version' => 'latest',
+            'region' => $region,
+        ]);
+    } catch (\Exception $e) {
+        logError("Error creating AWS client: " . $e->getMessage());
+        return null;
+    }
 }
 
-function sendEmailNotification($recipientEmail, $subject, $body, $sesClient = null): void
+
+function sendEmailNotification($recipientEmail, $subject, $body, $sesClient = null, $sendEmailCallable = null): void
 {
     if (!filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
         logError("Invalid recipient email address: $recipientEmail");
@@ -40,8 +46,12 @@ function sendEmailNotification($recipientEmail, $subject, $body, $sesClient = nu
         $sesClient = createAwsClient('Ses', $_ENV['AWS_REGION']);
     }
 
+    if ($sendEmailCallable === null) {
+        $sendEmailCallable = [$sesClient, 'sendEmail'];
+    }
+
     try {
-        $sesClient->sendEmail([
+        $sendEmailCallable([
             'Source' => $recipientEmail,
             'Destination' => [
                 'ToAddresses' => [$recipientEmail],
