@@ -40,7 +40,7 @@ class FetchSecretTest extends TestCase
         global $sendEmailNotification;
         $sendEmailNotification = function($recipientEmail, $subject, $body) {
             // Simulate sending an email
-            echo "Email sent to {$recipientEmail} with subject: {$subject}\n";
+            echo "Mock email sent to {$recipientEmail} with subject: {$subject}\n";
         };
 
         // Mock logging function
