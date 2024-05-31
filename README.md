@@ -45,13 +45,20 @@ This project is a PHP script designed to fetch secrets from AWS Secrets Manager,
 
 ## Usage
 
+
 1. **Initial Run:**
-   Run the `check_and_run.php` script to fetch the secret and set up the cron job:
+   Run the `check_and_run.php` script to fetch all secrets listed in the `.env` file and set up the cron jobs:
     ```bash
     php src/check_and_run.php
     ```
 
-2. **Fetch Secret Script:**
+2. **Fetch Specific Secret:**
+   Run the `check_and_run.php` script with a secret ID to fetch and set up the cron job for that specific secret:
+    ```bash
+    php src/check_and_run.php your-secret-id
+    ```
+
+3. **Fetch Secret Script:**
    This script fetches the secret from AWS Secrets Manager and caches it locally. It also sends an email notification:
     ```bash
     php src/fetch_secret.php
