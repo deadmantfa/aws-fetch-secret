@@ -9,7 +9,7 @@ use Aws\Ses\SesClient;
 
 class CommonTest extends TestCase
 {
-    private $errorLogFile;
+    private string $errorLogFile;
 
     protected function setUp(): void
     {
@@ -26,15 +26,9 @@ class CommonTest extends TestCase
 
     public function testLogError()
     {
-        // Redirect error log to a temporary file
         ini_set('error_log', $this->errorLogFile);
-
-        // Log an error
         logError('This is a test error.');
-
-        // Read the log content
         $logContent = file_get_contents($this->errorLogFile);
-
         $this->assertStringContainsString('This is a test error.', $logContent);
     }
 
@@ -47,17 +41,8 @@ class CommonTest extends TestCase
 
     public function testCreateAwsClient()
     {
-        // Mock the AWS SecretsManager client
-        $mock = new MockHandler();
-        $mock->append(new Result([]));
-        $secretsManagerClient = new SesClient([
-            'region'  => $_ENV['AWS_REGION'],
-            'version' => 'latest',
-            'handler' => $mock,
-            'credentials' => false,  // Ensure no real credentials are used
-        ]);
-
-        $this->assertInstanceOf(SesClient::class, $secretsManagerClient);
+        $client = createAwsClient('Ses', $_ENV['AWS_REGION']);
+        $this->assertInstanceOf(SesClient::class, $client);
     }
 
     public function testCreateAwsClientException()
@@ -69,45 +54,32 @@ class CommonTest extends TestCase
 
     public function testSendEmailNotificationValid()
     {
-        // Mock the SES client
         $mock = new MockHandler();
         $mock->append(new Result([]));
         $sesClient = new SesClient([
             'region'  => $_ENV['AWS_REGION'],
             'version' => 'latest',
             'handler' => $mock,
-            'credentials' => false,  // Ensure no real credentials are used
+            'credentials' => false,
         ]);
 
-        // Redirect output to capture the function's print output
-        $obLevel = ob_get_level();
         ob_start();
         sendEmailNotification('test@example.com', 'Test subject', 'Test body', $sesClient);
         $output = ob_get_clean();
-        while (ob_get_level() > $obLevel) {
-            ob_end_clean();
-        }
 
         $this->assertStringContainsString("Email sent: Test subject\n", $output);
     }
 
     public function testSendEmailNotificationInvalid()
     {
-        // Redirect error log to a temporary file
         ini_set('error_log', $this->errorLogFile);
-
-        // Test sending an email with an invalid recipient email
         sendEmailNotification('invalid-email', 'Test subject', 'Test body');
-
-        // Read the log content
         $logContent = file_get_contents($this->errorLogFile);
-
         $this->assertStringContainsString('Invalid recipient email address: invalid-email', $logContent);
     }
 
     public function testSendEmailNotificationException()
     {
-        // Mock the SES client to throw an exception
         $mock = new MockHandler();
         $mock->append(function (CommandInterface $cmd) {
             throw new AwsException('Error sending email', $cmd, ['code' => 'Error']);
@@ -116,114 +88,160 @@ class CommonTest extends TestCase
             'region'  => $_ENV['AWS_REGION'],
             'version' => 'latest',
             'handler' => $mock,
-            'credentials' => false,  // Ensure no real credentials are used
+            'credentials' => false,
         ]);
 
-        // Redirect error log to a temporary file
         ini_set('error_log', $this->errorLogFile);
-
-        // Test sending an email and catching the exception
         sendEmailNotification('test@example.com', 'Test subject', 'Test body', $sesClient);
-
-        // Read the log content
         $logContent = file_get_contents($this->errorLogFile);
-
         $this->assertStringContainsString('Error sending email: Error sending email', $logContent);
     }
 
+    /**
+     * @throws \PHPUnit\Framework\MockObject\Exception
+     */
     public function testSendEmailNotificationWithoutClient()
     {
-        // Mock the SES client
         $sesClientMock = $this->createMock(SesClient::class);
         $sesClientMock->expects($this->once())
             ->method('__call')
             ->with('sendEmail')
             ->willReturn(true);
 
-        // Redirect output to capture the function's print output
-        $obLevel = ob_get_level();
         ob_start();
         sendEmailNotification('test@example.com', 'Test subject', 'Test body', $sesClientMock);
         $output = ob_get_clean();
-        while (ob_get_level() > $obLevel) {
-            ob_end_clean();
-        }
-
-        // Ensure the output contains the expected message
         $this->assertStringContainsString("Email sent: Test subject\n", $output);
     }
 
     public function testScheduleCronJob()
     {
-        // Simulate the scenario where the cron job is not already scheduled
         $dateTime = new DateTime();
         $scriptPath = '/path/to/script.php';
 
-        // Clear any existing cron jobs
         exec('crontab -r');
-
-        // Redirect output to capture the function's print output
         ob_start();
         scheduleCronJob($dateTime, $scriptPath);
         $output = ob_get_clean();
-
-        // Assert the expected output
         $this->assertStringContainsString('Cron job scheduled:', $output);
     }
 
     public function testScheduleCronJobAlreadyScheduled()
     {
-        // Simulate the scenario where the cron job is already scheduled
         $dateTime = new DateTime();
         $scriptPath = '/path/to/script.php';
-
-        // Mock the existing cron job
         exec('echo "0 * * * * php /path/to/script.php" | crontab -');
 
-        // Redirect output to capture the function's print output
         ob_start();
         scheduleCronJob($dateTime, $scriptPath);
         $output = ob_get_clean();
-
-        // Assert the expected output
         $this->assertStringContainsString('Cron job already scheduled:', $output);
     }
 
     public function testScheduleCronJobFailure()
     {
-        // Simulate the scenario where scheduling a cron job fails
         $dateTime = new DateTime();
         $scriptPath = '/path/to/script.php';
 
-        // Mock the exec function to simulate failure
         $execMock = function($cmd, &$output, &$retval) {
             $retval = 1;
             $output = ["Mock error"];
         };
 
-        // Redirect error log to a temporary file
         ini_set('error_log', $this->errorLogFile);
-
-        // Test scheduling a cron job and catching the failure
         scheduleCronJob($dateTime, $scriptPath, $execMock);
-
-        // Read the log content
         $logContent = file_get_contents($this->errorLogFile);
-
         $this->assertStringContainsString('Failed to schedule cron job:', $logContent);
     }
 
     public function testRemoveTemporaryCronJob()
     {
-        // Mock the cron job removal
         $scriptPath = '/path/to/script.php';
+        $cronCommand = "php $scriptPath";
 
-        // Redirect output to capture the function's print output
+        // Mock the existing cron jobs
+        exec('echo "0 * * * * php /other_script.php\n" | crontab -');
+
         ob_start();
         removeTemporaryCronJob($scriptPath);
         $output = ob_get_clean();
 
-        // Assert the expected output
+        // Ensure the crontab was updated to remove the cron job
+        $newCrontab = shell_exec('crontab -l');
+
+        $this->assertStringNotContainsString($cronCommand, $newCrontab);
         $this->assertStringContainsString('Temporary cron job removed.', $output);
+
+        // Ensure newline before EOF
+        file_put_contents('/tmp/crontab.txt', $newCrontab . PHP_EOL);
+        exec('crontab /tmp/crontab.txt');
     }
+
+    public function testCreateAwsClientHandlesException()
+    {
+        $region = 'us-east-1';
+
+        // Mock client creator to throw an Exception
+        /**
+         * @throws Exception
+         */
+        $mockClientCreator = function() {
+            throw new Exception("Mocked exception for client creation");
+        };
+
+        // Set the error log to capture the logError output
+        ini_set('error_log', $this->errorLogFile);
+
+        // Execute the function and capture the output
+        $client = createAwsClient('InvalidService', $region, $mockClientCreator);
+        $logContent = file_get_contents($this->errorLogFile);
+
+        // Assertions for Exception
+        $this->assertNull($client);
+        $this->assertStringContainsString("Error creating AWS client: Mocked exception for client creation", $logContent);
+
+        // Mock client creator to throw an AwsException
+        /**
+         * @throws \PHPUnit\Framework\MockObject\Exception
+         */
+        $mockClientCreator = function() {
+            throw new AwsException("Mocked AWS exception for client creation", $this->createMock(CommandInterface::class));
+        };
+
+        // Execute the function and capture the output
+        $client = createAwsClient('InvalidService', $region, $mockClientCreator);
+        $logContent = file_get_contents($this->errorLogFile);
+
+        // Assertions for AwsException
+        $this->assertNull($client);
+        $this->assertStringContainsString("Error creating AWS client: Mocked AWS exception for client creation", $logContent);
+    }
+
+    /**
+     */
+    public function testSendEmailNotificationWithoutSesClient()
+    {
+        // Mock the SES client
+        $mock = new MockHandler();
+        $mock->append(new Result([])); // Mock a successful response
+
+        // Create the SES client with the mock handler
+        $sesClient = new SesClient([
+            'region' => $_ENV['AWS_REGION'],
+            'version' => 'latest',
+            'handler' => $mock,
+            'credentials' => false,
+        ]);
+
+        ob_start();
+        sendEmailNotification('test@example.com', 'Test subject', 'Test body', null, function ($params) use ($sesClient) {
+            $sesClient->sendEmail($params);
+        });
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString("Email sent: Test subject", $output);
+    }
+
+
+
 }

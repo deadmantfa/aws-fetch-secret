@@ -20,15 +20,21 @@ function loadConfiguration(): void
     $dotenv->load();
 }
 
-function createAwsClient($service, $region)
+function createAwsClient($service, $region, callable $clientCreator = null)
 {
+    if ($clientCreator === null) {
+        $clientCreator = function($className) use ($region) {
+            return new $className([
+                'version' => 'latest',
+                'region' => $region,
+            ]);
+        };
+    }
+
     try {
-        $className = "Aws\\{$service}\\{$service}Client";
-        return new $className([
-            'version' => 'latest',
-            'region' => $region,
-        ]);
-    } catch (\Exception $e) {
+        $className = "Aws\\$service\\{$service}Client";
+        return $clientCreator($className);
+    } catch (Exception $e) {
         logError("Error creating AWS client: " . $e->getMessage());
         return null;
     }
@@ -84,6 +90,7 @@ function scheduleCronJob($dateTime, $scriptPath, $exec = 'exec'): void
 
     // Read existing cron jobs
     $output = [];
+    $status = 0;
     $exec('crontab -l', $output, $status);
 
     if ($status !== 0) {
@@ -102,6 +109,8 @@ function scheduleCronJob($dateTime, $scriptPath, $exec = 'exec'): void
     // Add new cron job
     $output[] = $cronJob;
     file_put_contents('/tmp/crontab.txt', implode("\n", $output));
+    $execOutput = [];
+    $execStatus = 0;
     $exec('crontab /tmp/crontab.txt', $execOutput, $execStatus);
     unlink('/tmp/crontab.txt'); // Clean up temp file
 
