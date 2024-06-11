@@ -43,7 +43,7 @@ function fetchSecret($secretsManagerClient = null, $emailSender = null, $schedul
                 $subject = 'AWS Secret Manager: Secret Refreshed';
                 $body = "The secret for {$secretId} has been refreshed and stored in the cache.\n\nNext rotation date: $nextRotationDate";
 
-                $emailSender($recipientEmail, $subject, $body);
+                sendEmailNotification($recipientEmail, $subject, $body);
 
                 echo "Secret {$secretId} refreshed, stored in file cache, and email sent.\n";
             }

@@ -1,5 +1,7 @@
 <?php
 
+namespace AwsSecretFetcher;
+
 require __DIR__ . '/../vendor/autoload.php';
 
 use Aws\Exception\AwsException;

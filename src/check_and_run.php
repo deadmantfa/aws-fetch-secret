@@ -1,5 +1,4 @@
 <?php
-
 namespace AwsSecretFetcher;
 
 use DateTime;
@@ -14,6 +13,12 @@ $checkAndRunScriptPath = __DIR__ . '/check_and_run.php';
 $recipientEmail = $_ENV['RECIPIENT_EMAIL'];
 $secretIds = explode(',', $_ENV['AWS_SECRET_IDS']);
 
+global $argc, $argv;
+if (!isset($argc)) {
+    $argc = 1;
+    $argv = ['check_and_run.php'];
+}
+
 if ($argc > 1) {
     // Specific secret ID passed as an argument
     $secretIds = [trim($argv[1])];
@@ -26,15 +31,17 @@ if (!function_exists(__NAMESPACE__ . '\runFetchSecretScriptAndScheduleNextRotati
     /**
      * @throws Exception
      */
-    function runFetchSecretScriptAndScheduleNextRotation($secretId, $checkAndRunScriptPath, $cacheFilePath, $recipientEmail): void
+    function runFetchSecretScriptAndScheduleNextRotation($secretId, $checkAndRunScriptPath, $cacheFilePath, $recipientEmail, callable|string $exec = 'exec'): void
     {
-        $fetchSecretScriptPath = __DIR__ . '/fetch_secret.php';
-        exec("php $fetchSecretScriptPath");
+        global $secretsManagerClient, $sesClient;
+
+        $fetchSecretScriptPath = __DIR__ . '/../src/fetch_secret.php';
+        $exec("php $fetchSecretScriptPath");
 
         $subject = "AWS Secret Manager: Secret Refreshed for $secretId";
         $body = "The secret has been refreshed and stored in the cache.";
 
-        sendEmailNotification($recipientEmail, $subject, $body);
+        sendEmailNotification($recipientEmail, $subject, $body, $sesClient);
 
         if (file_exists($cacheFilePath)) {
             $cacheData = json_decode(file_get_contents($cacheFilePath), true);
