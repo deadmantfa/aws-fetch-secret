@@ -1,13 +1,14 @@
 <?php
 
+use Aws\Command;
 use Aws\Exception\AwsException;
 use Aws\MockHandler;
 use Aws\Result;
 use Aws\SecretsManager\SecretsManagerClient;
 use PHPUnit\Framework\TestCase;
+use function AwsSecretFetcher\fetchSecret;
 
-require_once __DIR__ . '/../src/fetch_secret.php';
-require_once __DIR__ . '/../src/common.php';
+require_once __DIR__ . '/bootstrap.php';
 
 class FetchSecretTest extends TestCase
 {
@@ -31,7 +32,7 @@ class FetchSecretTest extends TestCase
             'SecretString' => json_encode(['username' => 'testuser', 'password' => 'testpass']),
         ]));
         $secretsManagerMock->append(new Result([
-            'NextRotationDate' => (new DateTime('+1 day'))->format(DateTime::ATOM),
+            'NextRotationDate' => (new DateTime('+1 day'))->format(DateTimeInterface::ATOM),
         ]));
         $this->secretsManagerClient = new SecretsManagerClient([
             'region'  => $_ENV['AWS_REGION'],
@@ -64,21 +65,21 @@ class FetchSecretTest extends TestCase
         }
 
         // Mock email sending function
-        $mockEmailSender = function($recipientEmail, $subject, $body) {
-            echo "Mock email sent to {$recipientEmail} with subject: {$subject}\n";
+        $mockEmailSender = function($recipientEmail, $subject) {
+            echo "Mock email sent to $recipientEmail with subject: $subject\n";
         };
 
         // Mock crontab functions
         $mockScheduleCronJob = function ($dateTime, $scriptPath) {
-            echo "Mock crontab scheduled for {$dateTime->format('Y-m-d H:i:s')} with script {$scriptPath}\n";
+            echo "Mock crontab scheduled for {$dateTime->format('Y-m-d H:i:s')} with script $scriptPath\n";
         };
 
         $mockRemoveTemporaryCronJob = function ($scriptPath) {
-            echo "Mock crontab removed for script {$scriptPath}\n";
+            echo "Mock crontab removed for script $scriptPath\n";
         };
 
         ob_start();
-        \AwsSecretFetcher\fetchSecret($this->secretsManagerClient, $mockEmailSender, $mockScheduleCronJob, $mockRemoveTemporaryCronJob);
+        fetchSecret($this->secretsManagerClient, $mockEmailSender, $mockScheduleCronJob, $mockRemoveTemporaryCronJob);
         $output = ob_get_clean();
 
         $this->assertStringContainsString('Secret test-secret-id refreshed, stored in file cache, and email sent.', $output);
@@ -96,7 +97,7 @@ class FetchSecretTest extends TestCase
     {
         $secretsManagerMock = new MockHandler();
         $secretsManagerMock->append(function () {
-            throw new AwsException('Error fetching secret value', new \Aws\Command('getSecretValue'));
+            throw new AwsException('Error fetching secret value', new Command('getSecretValue'));
         });
         $this->secretsManagerClient = new SecretsManagerClient([
             'region' => $_ENV['AWS_REGION'],
@@ -105,8 +106,8 @@ class FetchSecretTest extends TestCase
         ]);
 
         ob_start();
-        \AwsSecretFetcher\fetchSecret($this->secretsManagerClient);
-        $output = ob_get_clean();
+        fetchSecret($this->secretsManagerClient);
+        ob_get_clean();
 
         $logContent = file_get_contents($this->errorLogFile);
         $this->assertStringContainsString('Error retrieving secret or sending email: Error fetching secret value', $logContent);
@@ -119,7 +120,7 @@ class FetchSecretTest extends TestCase
             'SecretString' => json_encode(['username' => 'testuser', 'password' => 'testpass']),
         ]));
         $secretsManagerMock->append(function () {
-            throw new AwsException('Error describing secret', new \Aws\Command('describeSecret'));
+            throw new AwsException('Error describing secret', new Command('describeSecret'));
         });
         $this->secretsManagerClient = new SecretsManagerClient([
             'region' => $_ENV['AWS_REGION'],
@@ -128,8 +129,8 @@ class FetchSecretTest extends TestCase
         ]);
 
         ob_start();
-        \AwsSecretFetcher\fetchSecret($this->secretsManagerClient);
-        $output = ob_get_clean();
+        fetchSecret($this->secretsManagerClient);
+        ob_get_clean();
 
         $logContent = file_get_contents($this->errorLogFile);
         $this->assertStringContainsString('Error retrieving secret or sending email: Error describing secret', $logContent);
@@ -143,24 +144,24 @@ class FetchSecretTest extends TestCase
         putenv('CACHE_DIR=');
 
         // Mock email sending function
-        $mockEmailSender = function ($recipientEmail, $subject, $body) {
-            echo "Mock email sent to {$recipientEmail} with subject: {$subject}\n";
+        $mockEmailSender = function ($recipientEmail, $subject) {
+            echo "Mock email sent to $recipientEmail with subject: $subject\n";
         };
 
         // Mock crontab functions
         $mockScheduleCronJob = function ($dateTime, $scriptPath) {
-            echo "Mock crontab scheduled for {$dateTime->format('Y-m-d H:i:s')} with script {$scriptPath}\n";
+            echo "Mock crontab scheduled for {$dateTime->format('Y-m-d H:i:s')} with script $scriptPath\n";
         };
 
         $mockRemoveTemporaryCronJob = function ($scriptPath) {
-            echo "Mock crontab removed for script {$scriptPath}\n";
+            echo "Mock crontab removed for script $scriptPath\n";
         };
 
         $defaultCacheDir = sys_get_temp_dir() . '/secrets';
         putenv('CACHE_DIR=' . $defaultCacheDir);
 
         ob_start();
-        \AwsSecretFetcher\fetchSecret($this->secretsManagerClient, $mockEmailSender, $mockScheduleCronJob, $mockRemoveTemporaryCronJob);
+        fetchSecret($this->secretsManagerClient, $mockEmailSender, $mockScheduleCronJob, $mockRemoveTemporaryCronJob);
         $output = ob_get_clean();
 
         $this->assertStringContainsString('Secret test-secret-id refreshed, stored in file cache, and email sent.', $output);

@@ -5,6 +5,8 @@ namespace AwsSecretFetcher;
 require __DIR__ . '/../vendor/autoload.php';
 
 use Aws\Exception\AwsException;
+use Aws\Sdk;
+use DateInterval;
 use Dotenv\Dotenv;
 
 function logError($message): void
@@ -22,21 +24,20 @@ function loadConfiguration(): void
     $dotenv->load();
 }
 
-function createAwsClient($service, $region, callable $clientCreator = null)
+function createAwsClient($service, $region, $clientCreator = null)
 {
-    if ($clientCreator === null) {
-        $clientCreator = function($className) use ($region) {
-            return new $className([
-                'version' => 'latest',
-                'region' => $region,
-            ]);
-        };
-    }
-
     try {
-        $className = "Aws\\$service\\{$service}Client";
-        return $clientCreator($className);
-    } catch (Exception $e) {
+        if (is_null($clientCreator)) {
+            $clientCreator = function() use ($service, $region) {
+                $sdk = new Sdk([
+                    'region'   => $region,
+                    'version'  => 'latest',
+                ]);
+                return $sdk->createClient($service);
+            };
+        }
+        return $clientCreator();
+    } catch (AwsException $e) {
         logError("Error creating AWS client: " . $e->getMessage());
         return null;
     }

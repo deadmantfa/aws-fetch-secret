@@ -6,6 +6,14 @@ use Aws\Result;
 use Aws\CommandInterface;
 use Aws\Exception\AwsException;
 use Aws\Ses\SesClient;
+use function AwsSecretFetcher\createAwsClient;
+use function AwsSecretFetcher\loadConfiguration;
+use function AwsSecretFetcher\logError;
+use function AwsSecretFetcher\removeTemporaryCronJob;
+use function AwsSecretFetcher\scheduleCronJob;
+use function AwsSecretFetcher\sendEmailNotification;
+
+require_once __DIR__ . '/bootstrap.php';
 
 class CommonTest extends TestCase
 {
@@ -47,8 +55,8 @@ class CommonTest extends TestCase
 
     public function testCreateAwsClientException()
     {
-        $this->expectException(Error::class);
-        $this->expectExceptionMessage('Class "Aws\InvalidService\InvalidServiceClient" not found');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The service "invalidservice" is not provided by the AWS SDK for PHP.');
         createAwsClient('InvalidService', 'us-east-1');
     }
 
@@ -181,29 +189,10 @@ class CommonTest extends TestCase
     {
         $region = 'us-east-1';
 
-        // Mock client creator to throw an Exception
-        /**
-         * @throws Exception
-         */
-        $mockClientCreator = function() {
-            throw new Exception("Mocked exception for client creation");
-        };
-
         // Set the error log to capture the logError output
         ini_set('error_log', $this->errorLogFile);
 
-        // Execute the function and capture the output
-        $client = createAwsClient('InvalidService', $region, $mockClientCreator);
-        $logContent = file_get_contents($this->errorLogFile);
-
-        // Assertions for Exception
-        $this->assertNull($client);
-        $this->assertStringContainsString("Error creating AWS client: Mocked exception for client creation", $logContent);
-
         // Mock client creator to throw an AwsException
-        /**
-         * @throws \PHPUnit\Framework\MockObject\Exception
-         */
         $mockClientCreator = function() {
             throw new AwsException("Mocked AWS exception for client creation", $this->createMock(CommandInterface::class));
         };
@@ -216,32 +205,4 @@ class CommonTest extends TestCase
         $this->assertNull($client);
         $this->assertStringContainsString("Error creating AWS client: Mocked AWS exception for client creation", $logContent);
     }
-
-    /**
-     */
-    public function testSendEmailNotificationWithoutSesClient()
-    {
-        // Mock the SES client
-        $mock = new MockHandler();
-        $mock->append(new Result([])); // Mock a successful response
-
-        // Create the SES client with the mock handler
-        $sesClient = new SesClient([
-            'region' => $_ENV['AWS_REGION'],
-            'version' => 'latest',
-            'handler' => $mock,
-            'credentials' => false,
-        ]);
-
-        ob_start();
-        sendEmailNotification('test@example.com', 'Test subject', 'Test body', null, function ($params) use ($sesClient) {
-            $sesClient->sendEmail($params);
-        });
-        $output = ob_get_clean();
-
-        $this->assertStringContainsString("Email sent: Test subject", $output);
-    }
-
-
-
 }

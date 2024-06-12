@@ -5,30 +5,10 @@ use Aws\Result;
 use Aws\MockHandler;
 use Aws\SecretsManager\SecretsManagerClient;
 use Aws\Ses\SesClient;
+use function AwsSecretFetcher\loadConfiguration;
+use function AwsSecretFetcher\runFetchSecretScriptAndScheduleNextRotation;
 
-require_once __DIR__ . '/../src/common.php';
-
-function runFetchSecretScriptAndScheduleNextRotation($secretId, $checkAndRunScriptPath, $cacheFilePath, $recipientEmail, callable|string $exec = 'exec'): void
-{
-    global $secretsManagerClient, $sesClient;
-
-    $fetchSecretScriptPath = __DIR__ . '/../src/fetch_secret.php';
-    $exec("php $fetchSecretScriptPath");
-
-    $subject = "AWS Secret Manager: Secret Refreshed for $secretId";
-    $body = "The secret has been refreshed and stored in the cache.";
-
-    sendEmailNotification($recipientEmail, $subject, $body, $sesClient);
-
-    if (file_exists($cacheFilePath)) {
-        $cacheData = json_decode(file_get_contents($cacheFilePath), true);
-
-        if (isset($cacheData['nextRotationDate'])) {
-            $nextRotationDate = new DateTime($cacheData['nextRotationDate']);
-            scheduleCronJob($nextRotationDate, "$checkAndRunScriptPath $secretId");
-        }
-    }
-}
+require_once __DIR__ . '/bootstrap.php';
 
 class CheckAndRunTest extends TestCase
 {
@@ -101,7 +81,7 @@ class CheckAndRunTest extends TestCase
         $cacheFilePath = $cacheDir . '/' . $secretId . '.json';
         $cacheData = [
             'secret' => ['username' => 'testuser', 'password' => 'testpass'],
-            'nextRotationDate' => (new DateTime('+1 day'))->format(DateTime::ATOM),
+            'nextRotationDate' => (new DateTime('+1 day'))->format(DateTimeInterface::ATOM),
         ];
         file_put_contents($cacheFilePath, json_encode($cacheData), LOCK_EX);
 
@@ -118,6 +98,9 @@ class CheckAndRunTest extends TestCase
         $this->assertStringContainsString('Scheduled cron job for next rotation date for test-secret-id.', $output);
     }
 
+    /**
+     * @throws Exception
+     */
     public function testCheckAndRunWithPastRotationDate()
     {
         $cacheDir = $_ENV['CACHE_DIR'] ?? '/tmp/secrets';
@@ -125,7 +108,7 @@ class CheckAndRunTest extends TestCase
         $cacheFilePath = $cacheDir . '/' . $secretId . '.json';
         $cacheData = [
             'secret' => ['username' => 'testuser', 'password' => 'testpass'],
-            'nextRotationDate' => (new DateTime('-1 day'))->format(DateTime::ATOM),
+            'nextRotationDate' => (new DateTime('-1 day'))->format(DateTimeInterface::ATOM),
         ];
         file_put_contents($cacheFilePath, json_encode($cacheData), LOCK_EX);
 
